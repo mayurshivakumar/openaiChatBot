@@ -17,7 +17,7 @@ go run main.go
 ```
 
 # How It Works
-The chatbot uses OpenAI's GPT-3 language model to generate responses to user input. When the user enters a message, the chatbot sends the conversation history to the GPT-3 API, which generates a response based on the context of the conversation so far. The chatbot then displays the response to the user and waits for the next input.
+The chatbot uses OpenAI's GPT-3 language model to generate responses to user input. When the user enters a message, the chatbot sends the conversation history to the GPT-3 API, which generates a response based on the context of the conversation so far. The chatbot then displays the response to the user and waits for the next input. Chatbot maintains token limit by truncating the older conversation. 
 
 # Usage example
 

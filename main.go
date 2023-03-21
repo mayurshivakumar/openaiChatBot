@@ -3,13 +3,20 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
+	tokenizer "github.com/samber/go-gpt-3-encoder"
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/spf13/viper"
+)
+
+const (
+	MAX_TOKEN_LIMIT    = 4096
+	MAX_RESPONSE_TOKEN = 250
 )
 
 func main() {
@@ -20,7 +27,7 @@ func main() {
 
 	apiKey := viper.GetString("API_KEY")
 	if apiKey == "" {
-		log.Fatal("API_KEY not found in config file or command-line arguments")
+		log.Fatalln("API_KEY not found in config file or command-line arguments")
 	}
 
 	if err := runChat(); err != nil {
@@ -58,6 +65,7 @@ func runChat() error {
 		}
 
 		history.addMessage(openai.ChatMessageRoleUser, input)
+		history.maintainTokenLimit()
 
 		resp, err := getResponse(client, context.Background(), history.messages)
 		if err != nil {
@@ -79,8 +87,9 @@ func getResponse(client *openai.Client, ctx context.Context, messages []openai.C
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:    openai.GPT3Dot5Turbo,
-			Messages: messages,
+			Model:     openai.GPT3Dot5Turbo,
+			Messages:  messages,
+			MaxTokens: MAX_RESPONSE_TOKEN,
 		},
 	)
 	if err != nil {
@@ -102,4 +111,34 @@ func (h *chatHistory) addMessage(role string, content string) {
 		Role:    role,
 		Content: content,
 	})
+}
+
+// maintainTokenLimit maintains token limit for conversation history
+func (h *chatHistory) maintainTokenLimit() {
+	out, err := json.Marshal(h.messages)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	encoder, err := tokenizer.NewEncoder()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	encoded, err := encoder.Encode(string(out))
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if len(encoded)+MAX_RESPONSE_TOKEN >= MAX_TOKEN_LIMIT {
+		h.removeOldMessages()
+	}
+}
+
+// removeOldMessages removes older messages from chat history
+// until the token limit is within the acceptable range
+func (h *chatHistory) removeOldMessages() {
+	half := len(h.messages) / 2
+	newMessages := make([]openai.ChatCompletionMessage, half+1)
+	newMessages[0] = h.messages[0]
+	copy(newMessages[1:], h.messages[half:])
+	h.messages = newMessages
 }

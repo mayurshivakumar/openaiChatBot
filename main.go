@@ -134,7 +134,6 @@ func (h *chatHistory) maintainTokenLimit() {
 }
 
 // removeOldMessages removes older messages from chat history
-// until the token limit is within the acceptable range
 func (h *chatHistory) removeOldMessages() {
 	half := len(h.messages) / 2
 	newMessages := make([]openai.ChatCompletionMessage, half+1)

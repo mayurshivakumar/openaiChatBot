@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	tokenizer "github.com/samber/go-gpt-3-encoder"
 	openai "github.com/sashabaranov/go-openai"
 	"github.com/spf13/viper"
@@ -47,12 +48,13 @@ func runChat() error {
 	if history.expert == "" {
 		log.Fatalln("Need to pick an expert")
 	}
-
+	blue := color.New(color.FgBlue)
+	green := color.New(color.FgGreen)
 	history.addMessage(openai.ChatMessageRoleSystem, fmt.Sprintf("You are a %s expert", history.expert))
 
 	for {
 		fmt.Println()
-		fmt.Printf("%s expert here ask your question('stop' to end): ", history.expert)
+		green.Printf("%s expert here ask your question('stop' to end): ", history.expert)
 		if !scanner.Scan() {
 			break
 		}
@@ -73,7 +75,8 @@ func runChat() error {
 			continue
 		}
 
-		fmt.Printf("%s expert: %s\n", history.expert, resp)
+		blue.Printf("%s expert: %s\n", history.expert, resp)
+		//fmt.Printf("%s expert: %s\n", history.expert, resp)
 		fmt.Println()
 
 		history.addMessage(openai.ChatMessageRoleAssistant, resp)
